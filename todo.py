@@ -5,7 +5,7 @@ import os
 class todo():
     def __init__(self):
         try:
-            f = open(os.path.expanduser('~/.todo-data'), 'r')
+            f = open(os.path.expanduser('~/.todo_data'), 'r')
             self.data = json.load(f)
             f.close()
         except FileNotFoundError:  # 初始化数据

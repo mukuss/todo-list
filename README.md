@@ -18,3 +18,17 @@
 2. `sudo apt-get install python3`等待安装完成
 3. `python -V`并回车，打印出`Python 3.n.n`则安装成功
 
+### 获取作业版本
+
+`git clone --branch todo-phase-1 https://github.com/mukuss/todo-list.git`
+
+### 运行测试
+
+1. `python todo.py add "hello wold"`
+2. `python todo.py add "todo-phase-2"`
+3. `python todo.py list`
+4. `python todo.py done 2`
+5. `python todo.py list`
+6. `python todo.py list --all`
+
+
