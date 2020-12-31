@@ -1,89 +1,121 @@
 import json
+import hashlib
 import argparse
 import os
 
+
 class todo():
-    def __init__(self):
+    def _read_todo_data_file(self):
+        file_name = os.path.join(os.path.expanduser('~'), '.todo_data')
         try:
-            f = open(os.path.expanduser('~/.todo_data'), 'r')
-            self.data = json.load(f)
+            f = open(file_name, 'r')
+            file_content = f.read()
+            if file_content[-32:] != hashlib.md5(bytes(file_content[:-32], encoding='utf8')).hexdigest():
+                raise IOError("Data file validation error")
             f.close()
-        except FileNotFoundError:  # 初始化数据
-            self.data = {'user': 'default', 'data': {
-                'default': {'item': [], 'done': []}}}
+            return file_content[:-32]
+        except (FileNotFoundError, IOError):
+            raise IOError("file validation error")
 
-    # 打印任务列表，all为是否打印已结束任务的标志，可False或True
-    def _print_item(self,all):
-        user = self.data['user']
-        data = self.data['data'][user]
+    def _write_todo_data_file(self, data):
+        file_name = os.path.join(os.path.expanduser('~'), '.todo_data')
+        try:
+            with open(file_name, 'w') as f:
+                f.write(data + hashlib.md5(bytes(data, encoding='utf8')).hexdigest())
+        except PermissionError as e:
+            raise IOError(
+                "Error: Unable to open file %s, unblock or grant read/write access to the file" % file_name)
+
+    def _read_and_parse_data_file(self):
+        try:
+            data = json.loads(self._read_todo_data_file())
+        except (IOError, json.decoder.JSONDecodeError):
+            init_data = {
+                'active_user': 'default',
+                'users': {
+                    'default': {
+                        'items': [],
+                    },
+                },
+            }
+            print("Initializes the data file")
+            data = init_data 
+        return data
+
+    def _pack_and_write_data_file(self,data):
+        try:
+            self._write_todo_data_file(json.dumps(data))
+        except IOError as e:
+            print(str(e))
+
+    def __init__(self):
+        self.file_data = self._read_and_parse_data_file()
+        active_user = self.file_data['active_user']
+        self.items = self.file_data['users'][active_user]['items']
+
+    def __del__(self):
+        self._pack_and_write_data_file(self.file_data)
+
+    def _print_items(self, print_all):
         print('')
         print('')
-        for no in range(len(data['item'])):
-            if data['done'][no] == False:
-                print("%d. %s"%(no+1,data['item'][no]))
-            elif all:
-                print("%d. [Done] %s"%(no+1,data['item'][no]))
+        for item in self.items:
+            if item['state'] == 'undone':
+                print("%d. %s" % (item['index'], item['text']))
+            elif print_all:
+                print("%d. [Done] %s" % (item['index'], item['text']))
         print('')
         print('')
 
-    # 添加任务
     def add(self, item):
-        user = self.data['user']
-        data = self.data['data'][user]
-        data['item'].append(item)
-        data['done'].append(False)
-        self._print_item(False)
-        itemIndex = len(data['item'])
+        itemIndex = len(self.items)+1
+        self.items.append(
+            {'index': itemIndex, 'text': item, 'state': 'undone'})
+        self._print_items(False)
         print('Item %d added' % itemIndex)
 
-    # 结束任务
     def done(self, itemIndex):
-        user = self.data['user']
-        data = self.data['data'][user]
-        data['done'][itemIndex] = True
-        self._print_item(False)
+        self.items[itemIndex]['state'] = 'done'
+        self._print_items(False)
         print('Item %d done' % itemIndex)
 
-    # 打印任务列表，all为是否打印已结束任务的标志，可False或True
-    def list(self,all):
-        user = self.data['user']
-        data = self.data['data'][user]
-        self._print_item(all)
-        all_items_number = len(data['item'])
-        done_number = len([f for f in data['done'] if f == True])
-        items_number = len([f for f in data['done'] if f == False])
-        if all == False:
-            print('Total: %d items' % items_number)
+    def list(self, list_all):
+        self._print_items(all)
+        items_number = len(self.items)
+        done_number = len(
+            [item for item in self.items if item['state'] == 'done'])
+        undone_number = len(
+            [item for item in self.items if item['state'] == 'undone'])
+        if list_all == False:
+            print('Total: %d items' % undone_number)
         else:
             print('Total: %d items, %d item done' %
-                  (all_items_number, done_number))
+                  (items_number, done_number))
 
-    # 将数据写入文件
-    def __del__(self):
-        with open(os.path.expanduser('~/.todo_data'), 'w') as f:
-            json.dump(self.data, f)
-            f.close()
-        
-# 程序从这里开始
-# 分析命令参数找到处理函数
-if(__name__=='__main__'):
+
+# 程序从这里开始，主要为使用argparse处理输入参数，业务代码均在todo类中
+if(__name__ == '__main__'):
     parser = argparse.ArgumentParser(description="todo")
     subparsers = parser.add_subparsers(description='subcommands')
 
     parser_add = subparsers.add_parser('add')
     parser_add.add_argument('item')
-    
+
     parser_add.set_defaults(func=lambda args: todo().add(args.item))
 
     parser_done = subparsers.add_parser('done')
     parser_done.add_argument('itemIndex')
-    parser_done.set_defaults(func=lambda args: todo().done(int(args.itemIndex)-1))
+    parser_done.set_defaults(
+        func=lambda args: todo().done(int(args.itemIndex)-1))
 
     parser_list = subparsers.add_parser('list')
     parser_list.add_argument('-a', '--all', nargs='?',
                              default=False, const=True, help='')
     parser_list.set_defaults(func=lambda args: todo().list(args.all))
 
-    args = parser.parse_args()
-    if args.func:
+    try:
+        args = parser.parse_args()
         args.func(args)
+    except AttributeError:
+        parser.parse_args(['--help'])
+        raise
