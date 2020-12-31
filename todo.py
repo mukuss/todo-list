@@ -80,7 +80,7 @@ class todo():
         print('Item %d done' % itemIndex)
 
     def list(self, list_all):
-        self._print_items(all)
+        self._print_items(list_all)
         items_number = len(self.items)
         done_number = len(
             [item for item in self.items if item['state'] == 'done'])
