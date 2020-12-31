@@ -75,7 +75,7 @@ class todo():
         print('Item %d added' % itemIndex)
 
     def done(self, itemIndex):
-        self.items[itemIndex]['state'] = 'done'
+        self.items[itemIndex-1]['state'] = 'done'
         self._print_items(False)
         print('Item %d done' % itemIndex)
 
@@ -106,7 +106,7 @@ if(__name__ == '__main__'):
     parser_done = subparsers.add_parser('done')
     parser_done.add_argument('itemIndex')
     parser_done.set_defaults(
-        func=lambda args: todo().done(int(args.itemIndex)-1))
+        func=lambda args: todo().done(int(args.itemIndex)))
 
     parser_list = subparsers.add_parser('list')
     parser_list.add_argument('-a', '--all', nargs='?',
