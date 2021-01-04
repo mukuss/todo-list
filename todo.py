@@ -185,6 +185,38 @@ class todo():
         self.config['active_user'] = None
         print("Logout success!")
 
+    def _pack_and_write_export_file(self, file_name, data):
+        try:
+            with open(file_name, 'w') as f:
+                f.write()
+        except IOError as e:
+            print("Error: Unable to open file %s, unblock or grant read/write access to the file" % file_name)
+            exit()
+    
+    def export_file(self):
+        self._import_user_data()
+        print(json.dumps(self.items))
+        
+    def _read_and_parse_import_file(self, file_name):
+        if not os.path.isfile(file_name):
+            print("File not found")
+        try:
+            with open(file_name, 'r') as f:
+                return json.loads(f.read())
+        except (FileNotFoundError, IOError):
+            print("Error: Unable to open file %s, unblock or grant read/write access to the file" % file_name)
+            exit()
+        except json.decoder.JSONDecodeError:
+            print("File format error")
+            exit()
+
+    def import_file(self, file):
+        self._import_user_data()
+        imported_items = self._read_and_parse_import_file(file)
+        self.items.extend(imported_items)
+        len(imported_items)
+        print("Import success! %d item" % len(imported_items))
+
 
 # 程序从这里开始，主要为使用argparse处理输入参数，业务代码均在todo类中
 if(__name__ == '__main__'):
@@ -217,6 +249,12 @@ if(__name__ == '__main__'):
     parser_logout = subparsers.add_parser('logout')
     parser_logout.set_defaults(func=lambda args: todo().logout())
 
+    parser_export = subparsers.add_parser('export')
+    parser_export.set_defaults(func=lambda args: todo().export_file())
+
+    parser_import = subparsers.add_parser('import')
+    parser_import.add_argument('-f', '--file', required=True, help='')
+    parser_import.set_defaults(func=lambda args: todo().import_file(args.file))
 
     try:
         args = parser.parse_args()
