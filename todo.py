@@ -176,7 +176,7 @@ class todo():
 
     def login(self, user_name):
         user_name = self.get_user_name_input(user_name)
-        password = self.get_user_password_input(user_name)
+        password = self.get_user_password_input()
         self.verify_user_and_password(user_name, password)
         self.config['active_user'] = user_name
         print("Login success!")
