@@ -85,19 +85,19 @@ class todo():
     def _import_user_data(self):
         self.user = self.config['active_user']
         if self.user != None:
-            if self.user not in self.file_data.keys():
-                self.file_data[self.user] = {'items': [], }
-            self.items = self.file_data[self.user]['items']
+            if self.user not in self.users_items.keys():
+                self.users_items[self.user] = {'items': [], }
+            self.items = self.users_items[self.user]['items']
         else:
             print('Please log in')
             exit()
 
     def __init__(self):
-        self.file_data = self._read_and_parse_data_file()
+        self.users_items = self._read_and_parse_data_file()
         self.config = self._read_and_parse_config_file()
 
     def __del__(self):
-        self._pack_and_write_data_file(self.file_data)
+        self._pack_and_write_data_file(self.users_items)
         self._pack_and_write_config_file(self.config)
 
     def _print_items(self, print_all):
@@ -138,26 +138,35 @@ class todo():
         else:
             print('Total: %d items, %d item done' %
                   (items_number, done_number))
-
-    def register(self, user_name):
-        if user_name == None:
+    
+    def get_user_name_input(self,user_name):
+        if user_name is None:
             user_name = input("register user name:")
-        password = getpass.getpass(prompt="password:")
-        retype_password = getpass.getpass(prompt="retype password:")
-        if password != retype_password:
+        return user_name
+
+    def to_hash(self,password):
+        return hashlib.sha256(bytes(password, encoding='utf8')).hexdigest()
+
+    def get_user_password_input(self,prompt = "password:"):
+        return self.to_hash(getpass.getpass(prompt=prompt))
+    
+    def verify_user_regist_info(self,user_name,password,password_again):
+        if password != password_again:
             print("The two passwords are inconsistent. Please register again")
             exit()
         if user_name in self.config['users'].keys():
             print("registration failed! This user name has been registered")
             exit()
-        password = hashlib.sha256(bytes(password, encoding='utf8')).hexdigest() 
+
+    def register(self, user_name):
+        user_name = self.get_user_name_input(user_name)
+        password = self.get_user_password_input()
+        password_again = self.get_user_password_input(prompt="password again:")
+        self.verify_user_regist_info(user_name, password, password_again)
         self.config['users'][user_name] = password
         print("Register successfully, log in and start using")
-    def login(self,user_name):
-        if user_name == None:
-            user_name = input("user:")
-        password = getpass.getpass()
-        password = hashlib.sha256(bytes(password, encoding='utf8')).hexdigest() 
+
+    def verify_user_and_password(self,user_name,password):
         if user_name not in self.config['users'].keys():
             print("Longin failed!")
             exit()
@@ -165,14 +174,16 @@ class todo():
             print("Longin failed!")
             exit()
 
-        if self.config['active_user'] != None:
-            print("User %d has logged out" % self.config['active_user'])
+    def login(self, user_name):
+        user_name = self.get_user_name_input(user_name)
+        password = self.get_user_password_input(user_name)
+        self.verify_user_and_password(user_name, password)
         self.config['active_user'] = user_name
         print("Login success!")
+
     def logout(self):
         self.config['active_user'] = None
         print("Logout success!")
-        pass
 
 
 # 程序从这里开始，主要为使用argparse处理输入参数，业务代码均在todo类中
