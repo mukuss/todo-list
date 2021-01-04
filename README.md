@@ -23,6 +23,9 @@ logout用以退出登录，
 1. 2020-12-31 增加说明、增加数据文件md5校验、整理代码并去除代码中部分“坏味道”使其更易于维护
 1. 2020-12-31 完成第二阶段用户登录功能
 1. 2021-01-04 整理代码，包含命名及函数
+1. 2021-01-04 修正登陆时输入密码提示显示为用户名的错误
+1. 2021-01-04 完成用户数据导入导出功能
+1. 2021-01-04 增加说明
 
 ## 环境搭建
 
@@ -40,7 +43,7 @@ logout用以退出登录，
 
 ### 获取作业版本
 
-`git clone --branch todo-phase-2 https://github.com/mukuss/todo-list.git`
+`git clone --branch todo-phase-3 https://github.com/mukuss/todo-list.git`
 
 ### 运行测试
 
@@ -52,8 +55,14 @@ logout用以退出登录，
 1. `python todo.py add "todo-phase-4"`
 1. `python todo.py done 1`
 1. `python todo.py done 2`
+1. `python todo.py done 3`
 1. `python todo.py list --all`
 1. `python todo.py list`
+1. `python todo.py export > ./back.txt`
+1. `python todo.py register -u mukuss2`#输入两遍任意密码注册
+1. `python todo.py login -u mukuss2`#输入刚刚注册的密码
+1. `python todo.py import -f ./back.txt`
+1. `python todo.py list --all`
 1. `python todo.py logout`
 1. `python todo.py list`
 
